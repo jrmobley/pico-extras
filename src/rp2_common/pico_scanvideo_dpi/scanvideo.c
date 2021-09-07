@@ -209,13 +209,7 @@ static struct {
 #define DMA_STATE_COUNT 4
 static uint32_t dma_states[DMA_STATE_COUNT];
 
-// todo get rid of this altogether
-#undef PICO_SCANVIDEO_ENABLE_VIDEO_CLOCK_DOWN
-#define PICO_SCANVIDEO_ENABLE_VIDEO_CLOCK_DOWN 1
-
-#if PICO_SCANVIDEO_ENABLE_VIDEO_CLOCK_DOWN
 static uint16_t video_clock_down_times_2;
-#endif
 
 semaphore_t vblank_begin;
 
@@ -991,9 +985,7 @@ void setup_sm(int sm, uint offset) {
     pio_sm_config config = is_scanline_sm(sm) ? video_mode.pio_program->configure_pio(video_pio, sm, offset) :
                            video_htiming_program_get_default_config(offset);
 
-#if PICO_SCANVIDEO_ENABLE_VIDEO_CLOCK_DOWN
     sm_config_set_clkdiv_int_frac(&config, video_clock_down_times_2 / 2, (video_clock_down_times_2 & 1u) << 7u);
-#endif
 
     if (!is_scanline_sm(sm)) {
         // enable auto-pull
@@ -1345,9 +1337,6 @@ bool scanvideo_setup_with_timing(const scanvideo_mode_t *mode, const scanvideo_t
         if (pin_mask & 1) gpio_set_function(i, GPIO_FUNC_PIO0);
     }
 
-#if !PICO_SCANVIDEO_ENABLE_VIDEO_CLOCK_DOWN
-    valid_params_if(SCANVIDEO_DPI, timing->clock_freq == video_clock_freq);
-#else
     uint sys_clk = clock_get_hz(clk_sys);
     video_clock_down_times_2 = sys_clk / timing->clock_freq;
 #if PICO_SCANVIDEO_ENABLE_CLOCK_PIN
@@ -1356,9 +1345,8 @@ bool scanvideo_setup_with_timing(const scanvideo_mode_t *mode, const scanvideo_t
     }
 #else
     if (video_clock_down_times_2 * timing->clock_freq != sys_clk) {
-        panic("System clock (%d) must be an integer multiple of the requested pixel clock (%d).", sys_clk, timing->clock_freq);
+        // panic("System clock (%d) must be an integer multiple of the requested pixel clock (%d).", sys_clk, timing->clock_freq);
     }
-#endif
 #endif
 
     valid_params_if(SCANVIDEO_DPI, mode->width * mode->xscale <= timing->h_active);
@@ -1692,9 +1680,7 @@ void scanvideo_timing_enable(bool enable) {
 #endif
         pio_claim_sm_mask(video_pio, sm_mask);
         pio_set_sm_mask_enabled(video_pio, sm_mask, false);
-#if PICO_SCANVIDEO_ENABLE_VIDEO_CLOCK_DOWN
         pio_clkdiv_restart_sm_mask(video_pio, sm_mask);
-#endif
 
         if (enable) {
             uint jmp = video_program_load_offset + pio_encode_jmp(video_mode.pio_program->entry_point);

@@ -93,10 +93,6 @@ extern "C" {
 #define PICO_SCANVIDEO_SYNC_PIN_BASE (PICO_SCANVIDEO_COLOR_PIN_BASE + PICO_SCANVIDEO_COLOR_PIN_COUNT)
 #endif
 
-#ifndef PICO_SCANVIDEO_ENABLE_VIDEO_CLOCK_DOWN
-#define PICO_SCANVIDEO_ENABLE_VIDEO_CLOCK_DOWN 0
-#endif
-
 // todo make multi plane play nicely with mode swapping;
 //  today we have hard coded blank/empty lines
 
